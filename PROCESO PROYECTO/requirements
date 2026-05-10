@@ -1,0 +1,16 @@
+# Backend core
+fastapi
+uvicorn[standard]
+
+# Cliente MQTT para recibir datos de HiveMQ
+paho-mqtt
+
+# WebSocket nativo (ya viene con uvicorn[standard], pero por si acaso en Windows)
+websockets
+
+# Base de datos (para cuando actives PostgreSQL/SQLite)
+sqlalchemy
+psycopg2-binary
+
+# Variables de entorno opcionales (para la URL de PostgreSQL más adelante)
+python-dotenv
