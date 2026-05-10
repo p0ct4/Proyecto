@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVOTECH - Incubadora Inteligente</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            opacity: 0.9;
+            margin-top: 8px;
+            font-size: 1.1rem;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .temp-icon { background: rgba(231, 76, 60, 0.3); }
+        .hum-icon { background: rgba(52, 152, 219, 0.3); }
+        .day-icon { background: rgba(155, 89, 182, 0.3); }
+        .egg-icon { background: rgba(241, 196, 15, 0.3); }
+
+        .value-big {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .value-unit {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .status-text {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-optimal {
+            background: rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.5);
+        }
+
+        .status-warning {
+            background: rgba(243, 156, 18, 0.3);
+            color: #f39c12;
+            border: 1px solid rgba(243, 156, 18, 0.5);
+        }
+
+        .status-danger {
+            background: rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .chart-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 20px;
+            position: relative;
+            height: 400px;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-sim {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .btn-sim:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.5);
+        }
+
+        .btn-danger:hover {
+            background: rgba(231, 76, 60, 0.5);
+        }
+
+        .logs {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .log-time {
+            color: #8f94fb;
+            margin-right: 10px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8rem; }
+            .value-big { font-size: 2.2rem; }
+            .chart-container { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1><i class="fas fa-egg"></i> OVOTECH</h1>
+        <p>Incubadora Automatizada para Pequeños Productores</p>
+    </header>
+
+    <div class="status-bar" id="connectionStatus">
+        <div class="status-dot active" id="statusDot"></div>
+        <span id="statusText">Sistema Conectado - Simulación Activa</span>
+    </div>
+
+    <div class="grid">
+        <!-- TEMPERATURA -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon temp-icon"><i class="fas fa-thermometer-half"></i></div>
+                Temperatura
+            </div>
+            <div class="value-big"><span id="tempValue">37.5</span><span class="value-unit">°C</span></div>
+            <span class="status-text status-optimal" id="tempStatus">Óptimo</span>
+        </div>
+
+        <!-- HUMEDAD -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon hum-icon"><i class="fas fa-tint"></i></div>
+                Humedad
+            </div>
+            <div class="value-big"><span id="humValue">58.0</span><span class="value-unit">%</span></div>
+            <span class="status-text status-optimal" id="humStatus">Óptimo</span>
+        </div>
+
+        <!-- DÍA DE INCUBACIÓN -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon day-icon"><i class="fas fa-calendar-day"></i></div>
+                Día de Incubación
+            </div>
+            <div class="value-big"><span id="dayValue">12</span><span class="value-unit">/21</span></div>
+            <span class="status-text status-optimal">En progreso</span>
+        </div>
+
+        <!-- HUEVOS -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon egg-icon"><i class="fas fa-egg"></i></div>
+                Huevos en Incubación
+            </div>
+            <div class="value-big"><span id="eggValue">24</span><span class="value-unit"> u.</span></div>
+            <span class="status-text status-optimal">Estables</span>
+        </div>
+    </div>
+
+    <!-- GRÁFICO -->
+    <div class="chart-container">
+        <div class="chart-title">
+            <i class="fas fa-chart-line"></i> Monitoreo en Tiempo Real
+        </div>
+        <canvas id="mainChart"></canvas>
+    </div>
+
+    <!-- CONTROLES DE SIMULACIÓN -->
+    <div class="controls">
+        <button class="btn btn-sim" onclick="toggleSimulation()">
+            <i class="fas fa-pause" id="simIcon"></i> <span id="simText">Pausar Simulación</span>
+        </button>
+        <button class="btn btn-danger" onclick="simularEmergencia()">
+            <i class="fas fa-exclamation-triangle"></i> Simular Emergencia
+        </button>
+        <button class="btn btn-sim" onclick="simularInicio()">
+            <i class="fas fa-redo"></i> Reiniciar Ciclo
+        </button>
+    </div>
+
+    <!-- LOGS -->
+    <div style="margin-top: 25px;">
+        <div class="card-header" style="margin-bottom: 10px;">
+            <i class="fas fa-terminal"></i> Registro de Eventos
+        </div>
+        <div class="logs" id="logs">
+            <div class="log-entry"><span class="log-time">--:--:--</span> Sistema iniciado. Simulación activa.</div>
+        </div>
+    </div>
+
+    <footer>
+        <p>OVOTECH Proyecto | Diseñado para pequeños productores avícolas</p>
+        <p style="margin-top: 5px; font-size: 0.8rem;">Datos mostrados son de demostración (modo mockup)</p>
+    </footer>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN DE SIMULACIÓN
+// ============================================================
+let simulacionActiva = true;
+let diaIncubacion = 12;
+let contadorSegundos = 0;
+
+// Datos históricos para el gráfico
+const MAX_POINTS = 30;
+let historialTemp = new Array(MAX_POINTS).fill(37.5);
+let historialHum = new Array(MAX_POINTS).fill(55);
+let historialLabels = [];
+
+// Generar etiquetas de tiempo iniciales
+for (let i = MAX_POINTS; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 3000);
+    historialLabels.push(d.toLocaleTimeString('es-ES', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'}));
+}
+
+// ============================================================
+// GRÁFICO CHART.JS
+// ============================================================
+const ctx = document.getElementById('mainChart').getContext('2d');
+const mainChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: historialLabels,
+        datasets: [
+            {
+                label: 'Temperatura (°C)',
+                data: [...historialTemp],
+                borderColor: '#ff6b6b',
+                backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                yAxisID: 'y'
+            },
+            {
+                label: 'Humedad (%)',
+                data: [...historialHum],
+                borderColor: '#4ecdc4',
+                backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                yAxisID: 'y1'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: {
+                labels: { color: '#fff', font: { size: 13 } }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                cornerRadius: 10,
+                padding: 12
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: 'rgba(255,255,255,0.7)' },
+                grid: { color: 'rgba(255,255,255,0.05)' }
+            },
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                min: 35, max: 42,
+                ticks: { color: '#ff6b6b' },
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                title: { display: true, text: '°C', color: '#ff6b6b' }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                min: 30, max: 90,
+                ticks: { color: '#4ecdc4' },
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: '%', color: '#4ecdc4' }
+            }
+        }
+    }
+});
+
+// ============================================================
+// LÓGICA DE ESTADOS
+// ============================================================
+function getTempStatus(t) {
+    if (t < 36.0 || t > 39.5) return { text: '¡PELIGRO!', cls: 'status-danger' };
+    if ((t >= 36.0 && t < 37.0) || (t > 38.5 && t <= 39.5)) return { text: 'Advertencia', cls: 'status-warning' };
+    return { text: 'Óptimo', cls: 'status-optimal' };
+}
+
+function getHumStatus(h) {
+    if (h < 40.0 || h > 80.0) return { text: '¡PELIGRO!', cls: 'status-danger' };
+    if ((h >= 40.0 && h < 50.0) || (h > 70.0 && h <= 80.0)) return { text: 'Advertencia', cls: 'status-warning' };
+    return { text: 'Óptimo', cls: 'status-optimal' };
+}
+
+// ============================================================
+// ACTUALIZAR UI
+// ============================================================
+function actualizarUI(temp, hum) {
+    document.getElementById('tempValue').textContent = temp.toFixed(1);
+    document.getElementById('humValue').textContent = hum.toFixed(1);
+
+    const st = getTempStatus(temp);
+    const elTemp = document.getElementById('tempStatus');
+    elTemp.textContent = st.text;
+    elTemp.className = 'status-text ' + st.cls;
+
+    const sh = getHumStatus(hum);
+    const elHum = document.getElementById('humStatus');
+    elHum.textContent = sh.text;
+    elHum.className = 'status-text ' + sh.cls;
+
+    // Actualizar gráfico
+    const ahora = new Date().toLocaleTimeString('es-ES', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    
+    mainChart.data.labels.push(ahora);
+    mainChart.data.datasets[0].data.push(temp);
+    mainChart.data.datasets[1].data.push(hum);
+
+    if (mainChart.data.labels.length > MAX_POINTS) {
+        mainChart.data.labels.shift();
+        mainChart.data.datasets[0].data.shift();
+        mainChart.data.datasets[1].data.shift();
+    }
+    mainChart.update('none');
+}
+
+// ============================================================
+// LOGS
+// ============================================================
+function addLog(mensaje, tipo='info') {
+    const logContainer = document.getElementById('logs');
+    const tiempo = new Date().toLocaleTimeString('es-ES');
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    
+    let color = '#8f94fb';
+    if (tipo === 'alerta') color = '#f39c12';
+    if (tipo === 'peligro') color = '#e74c3c';
+    if (tipo === 'exito') color = '#2ecc71';
+    
+    div.innerHTML = `<span class="log-time" style="color:${color}">[${tiempo}]</span> ${mensaje}`;
+    logContainer.insertBefore(div, logContainer.firstChild);
+    
+    if (logContainer.children.length > 20) {
+        logContainer.removeChild(logContainer.lastChild);
+    }
+}
+
+// ============================================================
+// SIMULACIÓN PRINCIPAL
+// ============================================================
+let tempActual = 37.5;
+let humActual = 58.0;
+let modoEmergencia = false;
+
+function generarDatos() {
+    if (!simulacionActiva) return;
+
+    // Simular fluctuaciones naturales
+    const ruidoTemp = (Math.random() - 0.5) * 0.4;
+    const ruidoHum = (Math.random() - 0.5) * 1.5;
+
+    // Modo emergencia: valores extremos
+    if (modoEmergencia) {
+        tempActual += (Math.random() - 0.3) * 1.5; // tiende a subir
+        humActual -= (Math.random() * 2);          // tiende a bajar
+        addLog('¡ALERTA! Condiciones anómalas detectadas', 'peligro');
+    } else {
+        tempActual = 37.5 + ruidoTemp;
+        humActual = 55 + Math.sin(Date.now() / 10000) * 5 + ruidoHum;
+        
+        // Mantener en rangos realistas si no es emergencia
+        if (tempActual < 36.5) tempActual = 36.5;
+        if (tempActual > 38.5) tempActual = 38.5;
+        if (humActual < 45) humActual = 45;
+        if (humActual > 70) humActual = 70;
+    }
+
+    // Clamp absoluto para seguridad de visualización
+    tempActual = Math.max(30, Math.min(45, tempActual));
+    humActual = Math.max(20, Math.min(95, humActual));
+
+    actualizarUI(tempActual, humActual);
+
+    // Actualizar día de incubación cada 30s simulados
+    contadorSegundos++;
+    if (contadorSegundos % 10 === 0) {
+        addLog(`Temperatura: ${tempActual.toFixed(1)}°C | Humedad: ${humActual.toFixed(1)}%`);
+    }
+}
+
+// Intervalo de simulación
+let intervaloSim = setInterval(generarDatos, 3000);
+
+// ============================================================
+// CONTROLES
+// ============================================================
+function toggleSimulation() {
+    simulacionActiva = !simulacionActiva;
+    const icon = document.getElementById('simIcon');
+    const text = document.getElementById('simText');
+    const dot = document.getElementById('statusDot');
+    
+    if (simulacionActiva) {
+        icon.className = 'fas fa-pause';
+        text.textContent = 'Pausar Simulación';
+        dot.style.background = '#2ecc71';
+        addLog('Simulación reanudada', 'exito');
+    } else {
+        icon.className = 'fas fa-play';
+        text.textContent = 'Reanudar Simulación';
+        dot.style.background = '#f39c12';
+        addLog('Simulación pausada', 'alerta');
+    }
+}
+
+function simularEmergencia() {
+    modoEmergencia = !modoEmergencia;
+    if (modoEmergencia) {
+        tempActual = 41.0;
+        humActual = 30.0;
+        addLog('MODO EMERGENCIA ACTIVADO - Verificando actuadores...', 'peligro');
+    } else {
+        tempActual = 37.5;
+        humActual = 58.0;
+        addLog('Emergencia resuelta. Volviendo a parámetros óptimos', 'exito');
+    }
+}
+
+function simularInicio() {
+    tempActual = 37.5;
+    humActual = 55.0;
+    diaIncubacion = 1;
+    contadorSegundos = 0;
+    modoEmergencia = false;
+    document.getElementById('dayValue').textContent = diaIncubacion;
+    
+    // Resetear gráfico
+    historialTemp.fill(37.5);
+    historialHum.fill(55);
+    mainChart.data.datasets[0].data = [...historialTemp];
+    mainChart.data.datasets[1].data = [...historialHum];
+    mainChart.update();
+    
+    addLog('Ciclo de incubación reiniciado', 'exito');
+}
+
+// ============================================================
+// INICIAL
+// ============================================================
+addLog('Sistema OVOTECH iniciado correctamente', 'exito');
+addLog('Conectado a broker HiveMQ (simulado)', 'exito');
+addLog('Sensores DHT22 calibrados', 'exito');
+</script>
+
+</body>
+</html>
